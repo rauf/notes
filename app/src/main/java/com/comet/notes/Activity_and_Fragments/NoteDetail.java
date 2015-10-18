@@ -1,7 +1,9 @@
-package com.comet.notes;
+package com.comet.notes.Activity_and_Fragments;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.graphics.Color;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -13,12 +15,17 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 import android.support.v7.widget.Toolbar;
 
+import com.comet.notes.Database.DBHandler;
+import com.comet.notes.R;
+import com.comet.notes.models.Note;
 
 
 public class NoteDetail extends AppCompatActivity {
 
     int noteId = -1;
     int positionOfNoteInViewGroup=-1;
+
+    boolean intentRecieved;
 
     EditText titleEditText;
     EditText textEditText;
@@ -28,17 +35,22 @@ public class NoteDetail extends AppCompatActivity {
     int noteTextSize;
     String noteColor;
 
+
+    FloatingActionButton floatingActionButton;
     DBHandler dbHandler = null;
     Toolbar toolbar = null;
+    Bundle bundle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_note_detail);
 
+        intentRecieved = true;
         titleEditText = (EditText) findViewById(R.id.titleEditText);
         textEditText = (EditText) findViewById(R.id.textEditText);
         toolbar =(Toolbar) findViewById(R.id.activity_main_toolbar);
+        floatingActionButton = (FloatingActionButton) findViewById(R.id.fab);
 
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle("Note Details");
@@ -50,22 +62,33 @@ public class NoteDetail extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 // method call      //not implemented for text size and color
-                saveOnPressingBackButton();
-                MainActivity.noteAdapter.updateList(dbHandler.getAllNotes());
-                closeKeyboard();
-                finish();
+                calledOnGoingBack();
             }
         });
+
+
+
+        floatingActionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //SelectFolderDialog selectFolderDialog = new SelectFolderDialog();
+                new SelectFolderDialog().show(getSupportFragmentManager(),"Abdul");
+            }
+        });
+
+
 
 
         RelativeLayout relativeLayout = (RelativeLayout) findViewById(R.id.RelativeLayout);
         dbHandler = new DBHandler(this,null,null,0);
 
         try {
-            Bundle bundle = getIntent().getExtras();
+            bundle = getIntent().getExtras();
+
+            if(bundle == null)
+                intentRecieved = false;
 
             noteId = bundle.getInt("_noteId");
-
             noteTitle = bundle.getString("_noteTitle");
             noteText = bundle.getString("_noteText");
             noteTextSize = bundle.getInt("_noteTextSize");
@@ -81,6 +104,8 @@ public class NoteDetail extends AppCompatActivity {
         }
     }
 
+
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -89,17 +114,60 @@ public class NoteDetail extends AppCompatActivity {
     }
 
     @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        calledOnGoingBack();
+    }
+
+
+    public void calledOnGoingBack(){
+        saveOnPressingBackButton();
+       // MainActivity.noteAdapter.updateList(dbHandler.getAllNotes());
+
+        closeKeyboard();
+        finish();
+    }
+
+
+    public void saveOnPressingBackButton() {
+        String tempTitle = titleEditText.getText().toString().trim();
+        String tempText = textEditText.getText().toString().trim();
+        try {
+            if (intentRecieved) {
+                if (!tempTitle.equals(noteTitle))
+                    dbHandler.updateNoteTitleById(noteId, tempTitle);
+
+                if (!tempText.equals(noteText) && (!tempText.equals("")))
+                    dbHandler.updateNoteTextById(noteId, tempText);
+
+                Toast.makeText(NoteDetail.this, "Note update", Toast.LENGTH_LONG).show();
+            } else if (!intentRecieved) {
+
+                if (!tempText.equals(""))
+                    dbHandler.addNote(new Note(tempTitle, tempText, 30, "7FAAFF"));
+            }
+        } finally {
+            dbHandler.close();
+        }
+    }
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
         switch (item.getItemId()) {
 
-            case R.id.deleteButton:
-                dbHandler.deleteNoteById(noteId);
-                MainActivity.arrayList.remove(positionOfNoteInViewGroup);
-                MainActivity.noteAdapter.notifyDataSetChanged();
-                closeKeyboard();
-                finish();
-                break;
+                case R.id.deleteButton:
+                    if(intentRecieved) {
+                        try {
+                            dbHandler.deleteNoteById(noteId);
+                            MainActivity.noteList.remove(positionOfNoteInViewGroup);
+                            //MainActivity.noteAdapter.notifyDataSetChanged();
+                        } catch (Exception e){
+                            Toast.makeText(NoteDetail.this,"Cannot delete note. It is not saved",Toast.LENGTH_LONG).show();
+                        }
+                    }
+                    closeKeyboard();
+                    finish();
+                    break;
 
             case R.id.colorButton:
                 // updateColor();               //not implemented
@@ -109,24 +177,10 @@ public class NoteDetail extends AppCompatActivity {
             default:
                 Toast.makeText(NoteDetail.this, "Please Select a Valid Button", Toast.LENGTH_LONG).show();
         }
-
         return super.onOptionsItemSelected(item);
     }
 
 
-    public void saveOnPressingBackButton(){
-        String tempTitle = titleEditText.getText().toString().trim();
-        String tempText= textEditText.getText().toString().trim();
-        try {
-            if (!tempTitle.equals(noteTitle))
-                dbHandler.updateNoteTitleById(noteId,tempTitle);
-
-            if(!tempText.equals(noteText))
-                dbHandler.updateNoteTextById(noteId,tempText);
-        }finally {
-            dbHandler.close();
-        }
-    }
 
     public void closeKeyboard(){
         ((InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE))

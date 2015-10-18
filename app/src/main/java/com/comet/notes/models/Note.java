@@ -1,4 +1,4 @@
-package com.comet.notes;
+package com.comet.notes.models;
 
 /**
  * Created by abdul on 8/11/2015.

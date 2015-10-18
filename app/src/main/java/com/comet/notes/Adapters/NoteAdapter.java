@@ -1,4 +1,4 @@
-package com.comet.notes;
+package com.comet.notes.Adapters;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -8,6 +8,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
+
+import com.comet.notes.R;
+import com.comet.notes.models.Note;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,7 +29,7 @@ public class NoteAdapter extends ArrayAdapter<Note>{
     Note singleNoteElement;
 
     public NoteAdapter(Context context, ArrayList<Note> notes) {
-        super(context, R.layout.noteuiwithoutimage, notes);
+        super(context, R.layout.single_note_ui, notes);
         this.arrayList=notes;
     }
 
@@ -34,9 +37,9 @@ public class NoteAdapter extends ArrayAdapter<Note>{
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
 
-        if(convertView==null) {         //for performance ,, it use convert view , does not create new view everytime
+        if(convertView==null) {         //for performance ,, it use convert view , does not create a new view every time
             LayoutInflater layoutInflater = LayoutInflater.from(getContext());
-            convertView = layoutInflater.inflate(R.layout.noteuiwithoutimage, parent, false);
+            convertView = layoutInflater.inflate(R.layout.single_note_ui, parent, false);
         }
 
         textContentTextView = (TextView)convertView.findViewById(R.id.textContentTextView);

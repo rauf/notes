@@ -1,21 +1,25 @@
-package com.comet.notes;
+package com.comet.notes.Database;
 
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.widget.Toast;
+
+import com.comet.notes.models.Folder;
+import com.comet.notes.models.Note;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by abdul on 09/22/15.
  */
 public class DBHandler extends SQLiteOpenHelper {
 
-    private static final int DATABASE_VERSION = 10;
+    private static final int DATABASE_VERSION = 14;
     private static final String DATABASE_NAME = "notes.db";
-
 
     //table and columns for notes
     private static final String TABLE_NOTES = "notes";
@@ -24,7 +28,6 @@ public class DBHandler extends SQLiteOpenHelper {
     private static final String NOTES_COLUMN_TEXT="_noteText";
     private static final String NOTES_COLUMN_TEXTSIZE = "_noteTextSize";
     private static final String NOTES_COLUMN_COLOR = "_noteColor";
-
 
     //table and columns for folders
     private static final String TABLE_FOLDERS = "folders";
@@ -79,12 +82,12 @@ public class DBHandler extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public void addNote(Note note){
+    public void addNote(Note note) {
 
         SQLiteDatabase db=null;
         ContentValues values = new ContentValues();
 
-        values.put(NOTES_COLUMN_TITLE,note.get_noteTitle());
+        values.put(NOTES_COLUMN_TITLE, note.get_noteTitle());
         values.put(NOTES_COLUMN_TEXT, note.get_noteText());
         values.put(NOTES_COLUMN_TEXTSIZE, note.getNoteTextSize());
         values.put(NOTES_COLUMN_COLOR, note.get_noteColor());
@@ -96,11 +99,113 @@ public class DBHandler extends SQLiteOpenHelper {
             if(db!=null)
                 db.close();
         }
+    }
 
+    public void addNoteWithFolder(Note note, int folderId){
+
+        addNote(note);
+        //to add this note to folder...add this note id to contains table
+        SQLiteDatabase db = null;
+        Cursor cursor = null;
+        String query = "SELECT * FROM " +TABLE_NOTES;
+        try {
+            db =getWritableDatabase();
+
+            cursor = db.rawQuery(query, null);
+            cursor.moveToLast();
+
+            ContentValues cv = new ContentValues();
+            cv.put(CONTAINS_COLUMN_NOTEID, cursor.getInt(cursor.getColumnIndex(NOTES_COLUMN_ID)));
+            cv.put(CONTAINS_COLUMN_FOLDERID,folderId);
+            db.insert(TABLE_CONTAINS,null,cv);
+        }finally {
+            if(db!=null)
+                db.close();
+            if(cursor!=null)
+                cursor.close();
+        }
     }
 
 
-    public ArrayList<Note> getAllNotes(){
+    public ArrayList<Note> getAllNotesFromFolder(int folderId) {
+        ArrayList<Note> arrayList= new ArrayList<>();
+        SQLiteDatabase db = null;
+        Cursor c = null;
+        try{
+            db =getWritableDatabase();
+            String query = "SELECT * FROM " + TABLE_NOTES  +","+ TABLE_CONTAINS+ " WHERE " +TABLE_CONTAINS+ "."+CONTAINS_COLUMN_FOLDERID + " = " +folderId
+                    +" AND " + TABLE_NOTES+ "."+ NOTES_COLUMN_ID + " IN ( SELECT "+ CONTAINS_COLUMN_NOTEID + " FROM " + TABLE_CONTAINS + " ) " ;
+            c = db.rawQuery(query,null);
+
+            if(c!=null)
+                 c.moveToFirst();
+
+            while(c.isAfterLast()) {
+                Note note = new Note();
+                note.set_noteId((c.getInt(c.getColumnIndex(NOTES_COLUMN_ID))));
+                note.set_noteTitle((c.getString(c.getColumnIndex(NOTES_COLUMN_TITLE))));
+                note.set_noteText((c.getString(c.getColumnIndex(NOTES_COLUMN_TEXT))));
+                note.set_noteColor((c.getString(c.getColumnIndex(NOTES_COLUMN_COLOR))));
+                note.setNoteTextSize(c.getInt(c.getColumnIndex(NOTES_COLUMN_TEXTSIZE)));
+                arrayList.add(note);
+                c.moveToNext();
+            }
+        }catch (Exception e){
+            return new ArrayList<>();
+        }
+        finally {
+            if(db!=null)
+                db.close();
+            if(c!=null)
+                c.close();
+        }
+
+    return arrayList;
+    }
+
+
+    public void addFolder(Folder folder) {
+        SQLiteDatabase db = null;
+        ContentValues contentValues = new ContentValues();
+
+        try {
+            db = getWritableDatabase();
+            contentValues.put(FOLDERS_COLUMN_NAME,folder.get_folderName());
+            contentValues.put(FOLDERS_COLUMN_COLOR,folder.get_folderName());
+
+            db.insert(TABLE_FOLDERS, null, contentValues);
+        } finally {
+            if(db!=null)
+                db.close();
+        }
+    }
+
+    public String[] getFolderNames() {
+        SQLiteDatabase db = null;
+        String array[];
+        Cursor c = null;
+        try{
+            db = getWritableDatabase();
+            String query = "SELECT " + FOLDERS_COLUMN_NAME +" FROM  " +TABLE_FOLDERS;
+            c = db.rawQuery(query,null);
+            c.moveToPosition(0);
+            int size = c.getCount();
+            array = new String[size];
+
+            for (int i = 0; i < size; i++) {
+                array[i] = c.getString(c.getColumnIndex(FOLDERS_COLUMN_NAME));
+                c.moveToNext();
+            }
+        } finally {
+            if(db!=null)
+                db.close();
+            if(c!=null)
+                c.close();
+        }
+        return array;
+    }
+
+    public ArrayList<Note> getAllNotes() {
 
         ArrayList<Note> list  = new ArrayList<>();
         SQLiteDatabase db=null;
@@ -136,6 +241,36 @@ public class DBHandler extends SQLiteOpenHelper {
         }
 
         return list;
+    }
+
+    public ArrayList<Folder> getAllFolders(){
+        SQLiteDatabase db = null;
+        Cursor c = null;
+        ArrayList<Folder> folderList = new ArrayList<>();
+
+        try{
+            db = getWritableDatabase();
+            String query = "SELECT * FROM " + TABLE_FOLDERS;
+            c = db.rawQuery(query,null);
+            c.moveToFirst();
+
+            while(!c.isAfterLast()) {
+                Folder newFolder = new Folder();
+                newFolder.set_folderId(c.getInt(c.getColumnIndex(FOLDERS_COLUMN_ID)));
+                newFolder.set_folderName(c.getString(c.getColumnIndex(FOLDERS_COLUMN_NAME)));
+                newFolder.set_folderColor(c.getString(c.getColumnIndex(FOLDERS_COLUMN_COLOR)));
+
+                folderList.add(newFolder);
+                c.moveToNext();
+            }
+        } finally {
+            if(c!=null)
+                c.close();
+            if(db!=null)
+                db.close();
+        }
+
+        return folderList;
     }
 
 

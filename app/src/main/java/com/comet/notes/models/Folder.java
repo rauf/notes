@@ -1,4 +1,4 @@
-package com.comet.notes;
+package com.comet.notes.models;
 
 /**
  * Created by abdul on 10/02/15.
@@ -18,12 +18,15 @@ public class Folder {
         this._folderColor = _folderColor;
     }
 
+/*
+
     public Folder(int _folderId, String _folderName, String _folderColor) {
         this._folderId = _folderId;
         this._folderName = _folderName;
         this._folderColor = _folderColor;
     }
 
+*/
 
 
     //////////////////Getters and setters/////////////////

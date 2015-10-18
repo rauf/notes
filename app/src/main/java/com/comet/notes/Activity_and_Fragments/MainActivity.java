@@ -1,4 +1,4 @@
-package com.comet.notes;
+package com.comet.notes.Activity_and_Fragments;
 
 
 import android.app.Activity;
@@ -8,28 +8,39 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.support.v7.widget.Toolbar;
+import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
+
+import com.comet.notes.Adapters.FolderAdapter;
+import com.comet.notes.Database.DBHandler;
+import com.comet.notes.R;
+import com.comet.notes.models.Folder;
+import com.comet.notes.models.Note;
 
 import java.util.ArrayList;
-import java.util.Collections;
 
-public class MainActivity extends AppCompatActivity implements MainFragment.MainFragmentInterface {
-
+public class MainActivity extends AppCompatActivity   {
 
     Toolbar toolbar;
     DrawerLayout drawerLayout;
     ListView leftDrawerListView;
     DBHandler dbHandler;
-    static ArrayList<Note> arrayList = null;
-    static NoteAdapter noteAdapter = null;
+    TextView allNotesButton;
+    NoteFragment noteFragment = null;
+    FolderFragment folderFragment = null;
+    static ArrayList<Note> noteList = null;
+    static ArrayList<Folder> folderList = null;
+    //static NoteAdapter noteAdapter = null;
+    static FolderAdapter folderAdapter = null;
+    public static int  currentlySelectedFolderId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-
 
         toolbar = (Toolbar) findViewById(R.id.activity_main_toolbar);
        // toolbar.setNavigationIcon(R.mipmap.back_arrow);
@@ -41,18 +52,16 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Main
         //getting references
         drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         leftDrawerListView = (ListView) findViewById(R.id.left_drawer);
+        allNotesButton = (TextView) findViewById(R.id.allNotesButton);
         dbHandler = new DBHandler(this, null, null, 0);
 
 
-        /////////////////// changing status bar color/////////////
-   /*     Window window = getWindow();
-        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        window.setStatusBarColor(Color.parseColor("#303F9F"));
-*/
-
-
-        ////////////// adding the main fragment to activity
+        allNotesButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                noteFragment.getNoteAdapter().updateList(dbHandler.getAllNotes());
+            }
+        });
 
 
 /*
@@ -65,30 +74,41 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Main
 
 */
 
-        arrayList = new ArrayList<>(dbHandler.getAllNotes());
-        Collections.reverse(arrayList);
-        noteAdapter = new NoteAdapter(this, arrayList);
 
-        MainFragment mainFragment = new MainFragment();
-        getFragmentManager().beginTransaction().add(R.id.layoutForGridView, mainFragment).commit();
 
+        //adding a fake folder
+        //dbHandler.addFolder(new Folder("Abdul","16744277"));
+
+
+        ////////////// adding the note fragment to activity
+        noteFragment = new NoteFragment();
+        getFragmentManager().beginTransaction().add(R.id.layoutForGridView, noteFragment).commit();
+
+        folderFragment = new FolderFragment();
+        getFragmentManager().beginTransaction().add(R.id.layoutForFolderRecyclerView,folderFragment).commit();
+
+
+       // noteFragment.changeNoteAdapter(noteAdapter);
+
+       // folderFragment.changeFolderAdapter(folderAdapter);
     }
 
-    ////////get data from main fragment (override method)
-    @Override
-    public void exchangeTextString(String text) {
 
-        try {
-            Note newNote = new Note("", text, 30, "7986CB");
-            dbHandler.addNote(newNote);
-            noteAdapter.insert(newNote, 0);
-            closeKeyboard();
-        } finally {
-            dbHandler.close();
-        }
+
+    public void changeNotesOnFolderPress(int folderId){
+       // noteAdapter.updateList(dbHandler.getAllNotesFromFolder(folderId));
+
+            noteFragment.getNoteAdapter().updateList(dbHandler.getAllNotesFromFolder(folderId));
+            //NoteAdapter na = new NoteAdapter(this,dbHandler.getAllNotesFromFolder(folderId));
+            //noteFragment.changeNoteAdapter(na);
     }
 
-    ///////////////getters of variables of this activity to be accessed by fragments
+    ///////////////getters,setters of variables of this activity to be accessed by fragments
+
+
+    public static void setCurrentlySelectedFolder(int currentlySelectedFolder) {
+        MainActivity.currentlySelectedFolderId = currentlySelectedFolder;
+    }
 
     public Toolbar getToolbar() {
         return toolbar;
@@ -107,11 +127,11 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Main
     }
 
     public ArrayList<Note> getArrayList() {
-        return arrayList;
+        return noteList;
     }
 
-    public NoteAdapter getNoteAdapter() {
-        return noteAdapter;
+    public NoteFragment getNoteFragment() {
+        return noteFragment;
     }
 
     /////////////////////////////////////////////////////////////////////////////////////
@@ -125,7 +145,6 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Main
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -134,8 +153,6 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Main
         ((InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE))
                 .toggleSoftInput(InputMethodManager.SHOW_IMPLICIT, 0);
     }
-
-
 }
 
 
