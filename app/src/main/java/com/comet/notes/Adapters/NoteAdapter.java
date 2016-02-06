@@ -28,16 +28,16 @@ public class NoteAdapter extends ArrayAdapter<Note>{
     TextView titleTextView;
     Note singleNoteElement;
 
+
     public NoteAdapter(Context context, ArrayList<Note> notes) {
         super(context, R.layout.single_note_ui, notes);
-        this.arrayList=notes;
     }
 
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
 
-        if(convertView==null) {         //for performance ,, it use convert view , does not create a new view every time
+        if(convertView == null) {         //for performance ,, it use convert view , does not create a new view every time
             LayoutInflater layoutInflater = LayoutInflater.from(getContext());
             convertView = layoutInflater.inflate(R.layout.single_note_ui, parent, false);
         }

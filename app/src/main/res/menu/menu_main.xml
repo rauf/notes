@@ -3,4 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools" tools:context=".MainActivity">
 
 
+    <item
+        android:id="@+id/addFolder"
+        android:title=" Add New Folder"
+        android:orderInCategory="1"
+        />
+
 </menu>

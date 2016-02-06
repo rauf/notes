@@ -1,6 +1,5 @@
 package com.comet.notes.Activity_and_Fragments;
 
-import android.app.Activity;
 import android.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
@@ -12,6 +11,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridView;
+import android.widget.Toast;
 
 import com.comet.notes.Adapters.NoteAdapter;
 import com.comet.notes.Database.DBHandler;
@@ -20,7 +20,7 @@ import com.comet.notes.models.Note;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+
 
 /**
  * Created by abdul on 10/01/15.
@@ -30,18 +30,10 @@ public class NoteFragment extends Fragment {
     Button addNoteButton;
     EditText writeNoteEditText;
     GridView gridView;
-    NoteFragmentInterface noteFragmentInterface;
+    ArrayList<Note> list;
     NoteAdapter noteAdapter = null;
     DBHandler dbHandler = null;
 
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        try{
-            noteFragmentInterface = (NoteFragmentInterface) activity;
-        }catch (Exception e){
-        }
-    }
 
     @Nullable
     @Override
@@ -55,7 +47,7 @@ public class NoteFragment extends Fragment {
         gridView = (GridView) view.findViewById(R.id.gridView);
         dbHandler = new DBHandler(getActivity(),null,null,0);
 
-        ArrayList<Note> list = new ArrayList<>(dbHandler.getAllNotes());
+        list = new ArrayList<>(dbHandler.getAllNotes());
         Collections.reverse(list);
         noteAdapter = new NoteAdapter(getActivity(), list);
 
@@ -66,7 +58,7 @@ public class NoteFragment extends Fragment {
             public void onClick(View v) {
                 if (writeNoteEditText.getText().toString().trim().equals("") || writeNoteEditText.getText() == null) {
                     Intent i = new Intent(getActivity(), NoteDetail.class);
-                    startActivity(i);
+                    startActivityForResult(i, 100);
 
                 } else {
                     String text = writeNoteEditText.getText().toString();
@@ -96,7 +88,7 @@ public class NoteFragment extends Fragment {
                                                 i.putExtra("_noteTextSize", note.getNoteTextSize());
                                                 i.putExtra("_positionOfNoteInViewGroup", position);
 
-                                                startActivity(i);
+                                                startActivityForResult(i, 100);
                                             }
                                         }
         );
@@ -105,13 +97,25 @@ public class NoteFragment extends Fragment {
     return view;
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode == 100) {
+            noteAdapter.updateList(dbHandler.getAllNotes());
+            Toast.makeText(getActivity(),"100 ",Toast.LENGTH_LONG).show();
+            noteAdapter.notifyDataSetChanged();
+        }
+
+        if(requestCode == 200) {
+            Toast.makeText(getActivity(),"Delete ",Toast.LENGTH_LONG).show();
+            list.remove(data.getExtras().getInt("position"));
+            noteAdapter.notifyDataSetChanged();
+        }
+    }
 
     public NoteAdapter getNoteAdapter() {
         return noteAdapter;
-    }
-
-    interface NoteFragmentInterface {
-        void exchangeTextString(String text);
     }
 
 }

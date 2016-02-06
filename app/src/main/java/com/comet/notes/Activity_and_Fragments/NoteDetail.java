@@ -1,7 +1,7 @@
 package com.comet.notes.Activity_and_Fragments;
 
 import android.app.Activity;
-import android.app.AlertDialog;
+import android.content.Intent;
 import android.graphics.Color;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -71,12 +71,9 @@ public class NoteDetail extends AppCompatActivity {
         floatingActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //SelectFolderDialog selectFolderDialog = new SelectFolderDialog();
                 new SelectFolderDialog().show(getSupportFragmentManager(),"Abdul");
             }
         });
-
-
 
 
         RelativeLayout relativeLayout = (RelativeLayout) findViewById(R.id.RelativeLayout);
@@ -123,7 +120,7 @@ public class NoteDetail extends AppCompatActivity {
     public void calledOnGoingBack(){
         saveOnPressingBackButton();
        // MainActivity.noteAdapter.updateList(dbHandler.getAllNotes());
-
+        callIfUpdatingListView();
         closeKeyboard();
         finish();
     }
@@ -132,6 +129,11 @@ public class NoteDetail extends AppCompatActivity {
     public void saveOnPressingBackButton() {
         String tempTitle = titleEditText.getText().toString().trim();
         String tempText = textEditText.getText().toString().trim();
+
+        Intent returnIntent = new Intent();
+        Bundle bundle = new Bundle();
+
+
         try {
             if (intentRecieved) {
                 if (!tempTitle.equals(noteTitle))
@@ -159,8 +161,11 @@ public class NoteDetail extends AppCompatActivity {
                     if(intentRecieved) {
                         try {
                             dbHandler.deleteNoteById(noteId);
-                            MainActivity.noteList.remove(positionOfNoteInViewGroup);
+                            //MainActivity.noteList.remove(positionOfNoteInViewGroup);
                             //MainActivity.noteAdapter.notifyDataSetChanged();
+                            callIfUpdatingListView();
+                            //callOnDeleting(positionOfNoteInViewGroup);
+
                         } catch (Exception e){
                             Toast.makeText(NoteDetail.this,"Cannot delete note. It is not saved",Toast.LENGTH_LONG).show();
                         }
@@ -180,6 +185,23 @@ public class NoteDetail extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+
+
+    public void callIfUpdatingListView(){
+       // Intent returnIntent = new Intent();
+       // Bundle bundle = new Bundle();
+        setResult(100);
+        finish();
+    }
+
+    public void callOnDeleting(int position) {
+        Intent returnIntent = new Intent();
+        returnIntent.putExtra("position",position);
+
+        setResult(200, returnIntent);
+        Toast.makeText(NoteDetail.this,"Sending",Toast.LENGTH_LONG).show();
+        finish();
+    }
 
 
     public void closeKeyboard(){

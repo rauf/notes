@@ -45,7 +45,7 @@ public class FolderAdapter extends RecyclerView.Adapter<FolderAdapter.FolderView
 
         final Folder currentFolder = folderList.get(position);
 
-        //holder.singleFolderTextView.setText(currentFolder.get_folderName());
+        holder.singleFolderTextView.setText(currentFolder.get_folderName());
         // holder.singleFolderCardView.setCardBackgroundColor(16744277);
         holder.singleFolderTextView.setBackgroundColor(16744277);
 

@@ -13,6 +13,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.comet.notes.Adapters.FolderAdapter;
 import com.comet.notes.Database.DBHandler;
@@ -31,10 +32,6 @@ public class MainActivity extends AppCompatActivity   {
     TextView allNotesButton;
     NoteFragment noteFragment = null;
     FolderFragment folderFragment = null;
-    static ArrayList<Note> noteList = null;
-    static ArrayList<Folder> folderList = null;
-    //static NoteAdapter noteAdapter = null;
-    static FolderAdapter folderAdapter = null;
     public static int  currentlySelectedFolderId;
 
     @Override
@@ -110,29 +107,8 @@ public class MainActivity extends AppCompatActivity   {
         MainActivity.currentlySelectedFolderId = currentlySelectedFolder;
     }
 
-    public Toolbar getToolbar() {
-        return toolbar;
-    }
 
-    public DrawerLayout getDrawerLayout() {
-        return drawerLayout;
-    }
 
-    public ListView getLeftDrawerListView() {
-        return leftDrawerListView;
-    }
-
-    public  DBHandler getDbHandler() {
-        return dbHandler;
-    }
-
-    public ArrayList<Note> getArrayList() {
-        return noteList;
-    }
-
-    public NoteFragment getNoteFragment() {
-        return noteFragment;
-    }
 
     /////////////////////////////////////////////////////////////////////////////////////
 
@@ -145,7 +121,17 @@ public class MainActivity extends AppCompatActivity   {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        return super.onOptionsItemSelected(item);
+
+        switch (item.getItemId()) {
+            case R.id.addFolder:
+                new CreateFolderDialog().show(getSupportFragmentManager(),"Create Folder");
+                break;
+
+            default:
+                Toast.makeText(MainActivity.this,"No option Selected",Toast.LENGTH_LONG).show();
+        }
+
+    return super.onOptionsItemSelected(item);
     }
 
 

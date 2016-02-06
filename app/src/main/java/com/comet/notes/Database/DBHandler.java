@@ -5,20 +5,18 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.widget.Toast;
 
 import com.comet.notes.models.Folder;
 import com.comet.notes.models.Note;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by abdul on 09/22/15.
  */
 public class DBHandler extends SQLiteOpenHelper {
 
-    private static final int DATABASE_VERSION = 14;
+    private static final int DATABASE_VERSION = 16;
     private static final String DATABASE_NAME = "notes.db";
 
     //table and columns for notes
@@ -84,7 +82,7 @@ public class DBHandler extends SQLiteOpenHelper {
 
     public void addNote(Note note) {
 
-        SQLiteDatabase db=null;
+        SQLiteDatabase db = null;
         ContentValues values = new ContentValues();
 
         values.put(NOTES_COLUMN_TITLE, note.get_noteTitle());
@@ -132,15 +130,15 @@ public class DBHandler extends SQLiteOpenHelper {
         SQLiteDatabase db = null;
         Cursor c = null;
         try{
-            db =getWritableDatabase();
+            db = getWritableDatabase();
             String query = "SELECT * FROM " + TABLE_NOTES  +","+ TABLE_CONTAINS+ " WHERE " +TABLE_CONTAINS+ "."+CONTAINS_COLUMN_FOLDERID + " = " +folderId
                     +" AND " + TABLE_NOTES+ "."+ NOTES_COLUMN_ID + " IN ( SELECT "+ CONTAINS_COLUMN_NOTEID + " FROM " + TABLE_CONTAINS + " ) " ;
             c = db.rawQuery(query,null);
 
-            if(c!=null)
-                 c.moveToFirst();
+            c.moveToFirst();
 
-            while(c.isAfterLast()) {
+            while(!c.isAfterLast()) {
+
                 Note note = new Note();
                 note.set_noteId((c.getInt(c.getColumnIndex(NOTES_COLUMN_ID))));
                 note.set_noteTitle((c.getString(c.getColumnIndex(NOTES_COLUMN_TITLE))));
@@ -149,6 +147,7 @@ public class DBHandler extends SQLiteOpenHelper {
                 note.setNoteTextSize(c.getInt(c.getColumnIndex(NOTES_COLUMN_TEXTSIZE)));
                 arrayList.add(note);
                 c.moveToNext();
+
             }
         }catch (Exception e){
             return new ArrayList<>();
@@ -163,6 +162,46 @@ public class DBHandler extends SQLiteOpenHelper {
     return arrayList;
     }
 
+    public int getIdOfFolderByName(String name) {
+        SQLiteDatabase db = null;
+        Cursor c = null;
+
+        try {
+            db = getReadableDatabase();
+            String query = " SELECT " + FOLDERS_COLUMN_ID + "  FROM " + TABLE_FOLDERS + " WHERE " + FOLDERS_COLUMN_NAME +" = " + name;
+
+            c = db.rawQuery(query,null);
+             return c.getInt(c.getColumnIndex(FOLDERS_COLUMN_ID));
+
+        } finally {
+            if(db!=null)
+                db.close();
+            if(c !=null)
+                c.close();
+        }
+    }
+
+
+    public void addNoteToManyFolders(int noteId, ArrayList folders ) {
+        SQLiteDatabase db =null;
+        ContentValues contentValues = new ContentValues();
+
+        try {
+            db=getWritableDatabase();
+
+            for (int i = 0; i < folders.size() ; i++) {
+                contentValues.put(CONTAINS_COLUMN_NOTEID,noteId);
+                contentValues.put(CONTAINS_COLUMN_FOLDERID,getIdOfFolderByName(folders.get(i).toString()));
+
+                db.insert(TABLE_CONTAINS, null, contentValues);
+                contentValues.clear();
+            }
+        } finally {
+            if(db!=null)
+                db.close();
+        }
+    }
+
 
     public void addFolder(Folder folder) {
         SQLiteDatabase db = null;
@@ -171,7 +210,7 @@ public class DBHandler extends SQLiteOpenHelper {
         try {
             db = getWritableDatabase();
             contentValues.put(FOLDERS_COLUMN_NAME,folder.get_folderName());
-            contentValues.put(FOLDERS_COLUMN_COLOR,folder.get_folderName());
+            contentValues.put(FOLDERS_COLUMN_COLOR, folder.get_folderName());
 
             db.insert(TABLE_FOLDERS, null, contentValues);
         } finally {
@@ -231,7 +270,7 @@ public class DBHandler extends SQLiteOpenHelper {
                 c.moveToNext();
             }
         } catch (Exception e) {
-
+            //left empty
         }
         finally {
             if(c!=null)
@@ -274,6 +313,33 @@ public class DBHandler extends SQLiteOpenHelper {
     }
 
 
+    public boolean checkIfFolderAlreadyPresent(String name) {
+        SQLiteDatabase db = null;
+        Cursor c = null;
+
+        try {
+            db= getReadableDatabase();
+            String query = "SELECT * FROM " + TABLE_FOLDERS +" WHERE " + FOLDERS_COLUMN_NAME +" = " +name;
+            c = db.rawQuery(query,null);
+            c.moveToFirst();
+           //Toast.makeText(DBHandler.this,c.getString(c.getColumnIndex(FOLDERS_COLUMN_NAME)),Toast.LENGTH_LONG).show();
+
+        }catch (Exception e) {
+            if(c == null)
+                return false;
+        }
+
+        finally {
+            if(db!= null)
+                db.close();
+            if(c!=null)
+                c.close();
+        }
+
+        return true;
+    }
+
+
     public void deleteNoteById(int id){
         SQLiteDatabase db  = null;
         try{
@@ -281,7 +347,8 @@ public class DBHandler extends SQLiteOpenHelper {
             String delete = "DELETE FROM "+ TABLE_NOTES+ " WHERE " + NOTES_COLUMN_ID + " = "+ id;
             db.execSQL(delete);
         } finally {
-            db.close();
+            if(db != null)
+                db.close();
         }
     }
 
@@ -293,7 +360,8 @@ public class DBHandler extends SQLiteOpenHelper {
             db.execSQL(update);
         }
         finally {
-            db.close();
+            if(db != null)
+                db.close();
         }
     }
 
@@ -305,7 +373,8 @@ public class DBHandler extends SQLiteOpenHelper {
             db.execSQL(update);
         }
         finally {
-            db.close();
+            if(db != null)
+                db.close();
         }
     }
 
@@ -317,7 +386,8 @@ public class DBHandler extends SQLiteOpenHelper {
             db.execSQL(update);
         }
         finally {
-            db.close();
+            if(db != null)
+                db.close();
         }
     }
 
@@ -329,17 +399,20 @@ public class DBHandler extends SQLiteOpenHelper {
             db.execSQL(update);
         }
         finally {
-            db.close();
+            if(db != null)
+                db.close();
         }
     }
 
     public void getNoteTitleById(int noteId){
         SQLiteDatabase db = null;
         try{
+            db = getWritableDatabase();
             String query = "SELECT * FROM " + TABLE_NOTES + " WHERE " + NOTES_COLUMN_ID + " = " + noteId;
             db.execSQL(query);
         }finally {
-            db.close();
+            if(db != null)
+                db.close();
         }
     }
 
